@@ -1,46 +1,72 @@
 import React from 'react'
 import express from 'express'
-import webpackDevMiddleware from 'webpack-dev-middleware'
-import webpackHotMiddleware from 'webpack-hot-middleware'
-import webpack from 'webpack'
 import {renderToString} from 'react-dom/server'
 import {RouterContext, match} from 'react-router'
 import {Provider} from 'mobx-react'
 import morgan from 'morgan'
-import DevTools from 'mobx-react-devtools'
-import Store from '../client/Store'
-import webpackConfig from '../webpack.config'
+import compression from 'compression'
+import fs from 'fs'
+import path from 'path'
 
+const isProduction = process.env.NODE_ENV === 'production'
 const server = express()
 
-const compiler = webpack(webpackConfig)
-
-compiler.plugin('done', () => {
-  Object.keys(require.cache).forEach((id) => {
-    if (/[/\\]client[/\\]/.test(id)) {
-      delete require.cache[id]
-    }
-  })
-})
-
+server.use(compression())
 server.use(morgan('dev'))
 
-server.use(webpackDevMiddleware(compiler, {
-  publicPath: webpackConfig.output.publicPath,
-  hot: true,
-  reload: true,
-  stats: {
-    colors: true
-  }
-}))
+const getScripts = () => {
+  const manifest = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../public/manifest.json'), 'utf8'))
+  return Object.keys(manifest)
+    .filter(key => key.endsWith('js'))
+    .sort(key => !key.includes('common'))
+    .map(key => `<script src="${manifest[key]}"></script>`)
+    .join('')
+}
 
-server.use(webpackHotMiddleware(compiler, {
-  log: console.log, // eslint-disable-line
-  path: '/__webpack_hmr',
-  heartbeat: 10 * 1000
-}))
+let scripts
+
+const DevTools = isProduction
+  ? () => null
+  : require('mobx-react-devtools').default // eslint-disable-line
+
+if (!isProduction) {
+  const webpack = require('webpack') // eslint-disable-line
+  const webpackDevMiddleware = require('webpack-dev-middleware') // eslint-disable-line
+  const webpackHotMiddleware = require('webpack-hot-middleware') // eslint-disable-line
+  const webpackConfig = require('../webpack.config').default // eslint-disable-line
+
+  const compiler = webpack(webpackConfig)
+
+  compiler.plugin('done', () => {
+    scripts = getScripts()
+    Object.keys(require.cache).forEach((id) => {
+      if (/[/\\]client[/\\]/.test(id)) {
+        delete require.cache[id]
+      }
+    })
+  })
+
+  server.use(webpackDevMiddleware(compiler, {
+    publicPath: webpackConfig.output.publicPath,
+    hot: true,
+    reload: true,
+    stats: {
+      colors: true
+    }
+  }))
+
+  server.use(webpackHotMiddleware(compiler, {
+    log: console.log, // eslint-disable-line
+    path: '/__webpack_hmr',
+    heartbeat: 10 * 1000
+  }))
+} else {
+  scripts = getScripts()
+  server.use('/public', express.static('public'))
+}
 
 const renderView = async (props) => {
+  const Store = require('../client/Store').default // eslint-disable-line
   const store = new Store({todos: ['this is a todo from the server']})
   const promises = props.components
     .filter(component => component.fetchData)
@@ -67,7 +93,7 @@ const renderView = async (props) => {
     <body>
       <main id="appContainer">${appHtml}</main>
       <script>window.initialState = ${JSON.stringify(store)}</script>
-      <script src="bundle.js"></script>
+      ${scripts}
     </body>
     </html>
   `

@@ -5,8 +5,8 @@ import Profile from './pages/Profile'
 import About from './pages/About'
 
 export default (
-  <Route path="/" component={Root}>
-    <Route path="about" component={About}/>
-    <Route path="profile" component={Profile}/>
+  <Route path='/' component={Root}>
+    <Route path='about' component={About}/>
+    <Route path='profile' component={Profile}/>
   </Route>
 )

@@ -1,15 +1,32 @@
 import path from 'path'
-import webpack from 'webpack'
+import webpack from 'webpack' // eslint-disable-line
+import ManifestPlugin from 'webpack-manifest-plugin' // eslint-disable-line
+
+const isProduction = process.env.NODE_ENV === 'production'
+
+const publicPath = '/public/'
 
 export default {
-  devtool: 'inline-source-map',
-  entry: [
-    'webpack-hot-middleware/client',
-    './client/index.js'
-  ],
+  devtool: isProduction ? 'source-map' : 'inline-source-map',
+  entry: {
+    bundle: [
+      './client/index.js',
+      ...(isProduction ? [] : ['webpack-hot-middleware/client'])
+    ],
+    vendor: [
+      'babel-polyfill',
+      'react',
+      'react-dom',
+      'mobx',
+      'mobx-react',
+      'react-router'
+    ]
+  },
+  watch: !isProduction,
   output: {
-    filename: './bundle.js',
-    publicPath: '/'
+    filename: isProduction ? '[name].[chunkhash].js' : '[name].js',
+    publicPath,
+    path: path.resolve(__dirname, 'public')
   },
   module: {
     rules: [{
@@ -19,9 +36,31 @@ export default {
     }]
   },
   plugins: [
-    new webpack.optimize.OccurrenceOrderPlugin(),
-    new webpack.HotModuleReplacementPlugin(),
+    new webpack.optimize.CommonsChunkPlugin({
+      names: [
+        'vendor',
+        'common'
+      ]
+    }),
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+    }),
     new webpack.NoErrorsPlugin(),
-    new webpack.NamedModulesPlugin()
-  ]
+    ...(
+      isProduction
+        ? []
+        : [
+          new webpack.HotModuleReplacementPlugin(),
+          new webpack.NamedModulesPlugin()
+        ]
+    ),
+    new webpack.optimize.OccurrenceOrderPlugin(),
+    new ManifestPlugin({
+      basePath: publicPath,
+      writeToFileEmit: true
+    })
+  ],
+  performance: {
+    hints: false
+  }
 }

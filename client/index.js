@@ -1,8 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import {browserHistory} from 'react-router'
-import DevTools from 'mobx-react-devtools'
 import Store from './Store'
+
+const DevTools = process.env.NODE_ENV === 'production'
+  ? () => null
+  : require('mobx-react-devtools').default
 
 const store = new Store(window.initialState)
 

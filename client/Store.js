@@ -3,6 +3,7 @@ import {observable} from 'mobx'
 export default class Store {
   constructor(state = {todos: []}) {
     this.todos = observable(state.todos)
+    this.fetched = state.fetched
   }
 
   addTodo(todo) {
@@ -11,10 +12,15 @@ export default class Store {
 
   fetch() {
     return new Promise((resolve) => {
-      setTimeout(() => {
-        this.todos.push('my async todo')
-        resolve()
-      }, 1000)
+      if (!this.fetched) {
+        setTimeout(() => {
+          if (!this.fetched) {
+            this.todos.push('async todo')
+            this.fetched = true
+          }
+          resolve()
+        }, 1000)
+      }
     })
   }
 }
