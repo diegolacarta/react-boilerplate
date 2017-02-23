@@ -72,7 +72,10 @@ const renderView = async (props) => {
     .filter(component => component.fetchData)
     .map(component => component.fetchData({store}))
 
-  await Promise.all(promises)
+  await Promise.race([
+    Promise.all(promises),
+    new Promise(resolve => setTimeout(resolve, 1000))
+  ])
 
   const appHtml = renderToString(
     <div>

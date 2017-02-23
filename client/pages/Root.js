@@ -3,7 +3,7 @@ import {Link} from 'react-router'
 
 export default class Root extends React.Component {
   static propTypes = {
-    children: React.PropTypes.element
+    children: React.PropTypes.element.isRequired
   }
 
   render() {
