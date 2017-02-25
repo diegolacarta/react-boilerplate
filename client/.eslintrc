@@ -1,6 +1,7 @@
 {
   "env": {
-    "browser": true
+    "browser": true,
+    "jest": true
   },
   "rules": {
     "jsx-quotes": ["error", "prefer-single"]
