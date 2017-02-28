@@ -7,6 +7,7 @@ import morgan from 'morgan'
 import compression from 'compression'
 import fs from 'fs'
 import path from 'path'
+import api from './api'
 
 const isProduction = process.env.NODE_ENV === 'production'
 const server = express()
@@ -67,7 +68,7 @@ if (!isProduction) {
 
 const renderView = async (props) => {
   const Store = require('../client/Store').default // eslint-disable-line
-  const store = new Store({todos: ['this is a todo from the server']})
+  const store = new Store()
   const promises = props.components
     .filter(component => component.fetchData)
     .map(component => component.fetchData({store}))
@@ -101,6 +102,8 @@ const renderView = async (props) => {
     </html>
   `
 }
+
+server.use('/api', api)
 
 server.use((request, response) => {
   const routes = require('../client/routes').default // eslint-disable-line

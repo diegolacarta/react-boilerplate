@@ -56,7 +56,7 @@ export default {
     ),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new ManifestPlugin({
-      basePath: publicPath,
+      publicPath,
       writeToFileEmit: true
     })
   ],
