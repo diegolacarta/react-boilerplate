@@ -2,3 +2,7 @@ node_modules/
 public/
 .vscode
 coverage/
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
